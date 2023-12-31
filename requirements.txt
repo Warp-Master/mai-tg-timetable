@@ -1,0 +1,3 @@
+aiogram
+python-dotenv
+aiohttp-client-cache[sqlite]

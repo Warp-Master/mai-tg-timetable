@@ -1,0 +1,5 @@
+.env
+aiohttp-requests.db
+
+.idea/
+__pycache__/
