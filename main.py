@@ -50,26 +50,30 @@ async def hide_callback_query(query: CallbackQuery) -> None:
 
 
 async def timetable_handler(obj: Message | CallbackQuery, callback_data):
+    group, request = callback_data.group, callback_data.body
+    today = date.today()
+
     if isinstance(obj, CallbackQuery):
         message = obj.message
+        action = message.edit_text
+
+        if request == 'day' and callback_data.showing == today.strftime('%y%W%u'):
+            return await obj.answer('Уже на текущем дне')
+        if request == 'week' and callback_data.showing == today.strftime('%y%W'):
+            return await obj.answer('Уже на текущей неделе')
     elif isinstance(obj, Message):
-        message = obj
+        action = obj.answer
     else:
         raise ValueError("First argument must be instance of Message or CallbackQuery")
 
-    group, request = callback_data.group, callback_data.body
     if request == 'day':
-        request = date.today().strftime('%y%W%u')
+        request = today.strftime('%y%W%u')
     elif request == 'week':
-        request = date.today().strftime('%y%W')
+        request = today.strftime('%y%W')
 
-    if message.from_user.id == bot.id:
-        action = message.edit_text
-    else:
-        action = message.answer
-    await action(text=await get_timetable_msg(group, request),
-                 reply_markup=get_timetable_markup(group, request),
-                 parse_mode=ParseMode.HTML)
+    return await action(text=await get_timetable_msg(group, request),
+                        reply_markup=get_timetable_markup(group, request),
+                        parse_mode=ParseMode.HTML)
 
 
 dp.callback_query(TimetableRequest.filter())(timetable_handler)

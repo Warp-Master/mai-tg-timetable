@@ -1,22 +1,22 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pydantic import Field
 
 
 class TimetableRequest(CallbackData, prefix='tt'):
     group: str
     # body may be %y%W (for week display) or %y%W%u (for day display)
     # also "week" means current week and "day" means current day
-    body: str = Field(default_factory=lambda: date.today().strftime('%y%W'))
+    body: str
+    showing: str | None = None  # when body equals "week" or "day" stores current page
 
 
 def get_confirm_markup(group: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[
             InlineKeyboardButton(text="Нет", callback_data="hide"),
-            InlineKeyboardButton(text="Да", callback_data=TimetableRequest(group=group).pack())
+            InlineKeyboardButton(text="Да", callback_data=TimetableRequest(group=group, body='week').pack())
         ]]
     )
 
@@ -24,8 +24,8 @@ def get_confirm_markup(group: str) -> InlineKeyboardMarkup:
 def get_timetable_markup(group: str, request: str) -> InlineKeyboardMarkup:
     one_day = timedelta(days=1)
 
-    current_day_request = TimetableRequest(group=group, body='day').pack()
-    current_week_request = TimetableRequest(group=group, body='week').pack()
+    current_day_request = TimetableRequest(group=group, body='day', showing=request).pack()
+    current_week_request = TimetableRequest(group=group, body='week', showing=request).pack()
 
     if len(request) == 4:
         prev_page = (datetime.strptime(f'{request}1', '%y%W%u') - one_day).strftime('%y%W')
