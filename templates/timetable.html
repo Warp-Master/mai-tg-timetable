@@ -1,0 +1,10 @@
+{% for title, d in data.items() -%}
+<pre><code class="language-{{ title }}">{% if d -%}
+    {% for time, pair in d.items() -%}
+        {{ pair.title }}&#10;{% if pair.lector -%}
+        {{ pair.lector }}&#10;{% endif -%}
+        {{ pair.time_start -}}-{{ pair.time_end }}   {{ pair.type }}   {{ pair.room -}}
+        {% if not loop.last %}&#10;&#10;{% endif -%}
+    {% endfor -%}
+{% else -%}Выходной{% endif -%}
+</code></pre>{% endfor %}
