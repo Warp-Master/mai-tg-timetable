@@ -11,11 +11,12 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.markdown import hbold, hunderline
 
 from config import TOKEN
-from keyboards import get_confirm_markup, TimetableRequest
+from keyboards import get_confirm_markup, get_timetable_markup, TimetableRequest
 from timetable import get_groups
 from timetable import get_timetable_msg
 
 dp = Dispatcher()
+bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 
 
 @dp.message(CommandStart())
@@ -34,9 +35,9 @@ async def process_group(message: Message) -> None:
     all_groups = await get_groups()
 
     if group in all_groups:
-        await message.answer(await get_timetable_msg(group, date.today().strftime('%y%W')), parse_mode=ParseMode.HTML)
+        await timetable_handler(message, TimetableRequest(group=group, body='week'))
     else:
-        possible_group = get_close_matches(group, all_groups, n=1)[0]
+        possible_group = get_close_matches(group, all_groups, n=1, cutoff=0.0)[0]
         await message.answer(
             f"Может быть {hunderline(possible_group)}?",
             reply_markup=get_confirm_markup(possible_group)
@@ -48,14 +49,33 @@ async def hide_callback_query(query: CallbackQuery) -> None:
     await query.message.delete()
 
 
-@dp.callback_query(TimetableRequest.filter())
-async def timetable_callback(query: CallbackQuery, callback_data: TimetableRequest) -> None:
+async def timetable_handler(obj: Message | CallbackQuery, callback_data):
+    if isinstance(obj, CallbackQuery):
+        message = obj.message
+    elif isinstance(obj, Message):
+        message = obj
+    else:
+        raise ValueError("First argument must be instance of Message or CallbackQuery")
+
     group, request = callback_data.group, callback_data.body
-    await query.message.edit_text(await get_timetable_msg(group, request), parse_mode=ParseMode.HTML)
+    if request == 'day':
+        request = date.today().strftime('%y%W%u')
+    elif request == 'week':
+        request = date.today().strftime('%y%W')
+
+    if message.from_user.id == bot.id:
+        action = message.edit_text
+    else:
+        action = message.answer
+    await action(text=await get_timetable_msg(group, request),
+                 reply_markup=get_timetable_markup(group, request),
+                 parse_mode=ParseMode.HTML)
+
+
+dp.callback_query(TimetableRequest.filter())(timetable_handler)
 
 
 async def main() -> None:
-    bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
     await dp.start_polling(bot)
 
 

@@ -53,7 +53,7 @@ def repack_days_data(data: dict) -> dict:
                                  'time_end': value.get('time_end', '')[:-3],
                                  'lector': next(iter(value.get('lector', dict()).values()), '').title(),
                                  'type': next(iter(value.get('type', dict()).keys()), ''),
-                                 'room': next(iter(value.get('room', dict()).values()), '').capitalize()}
+                                 'room': next(iter(value.get('room', dict()).values()), '')}
         new_data[title] = pairs
     return new_data
 
