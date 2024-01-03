@@ -29,7 +29,7 @@ async def command_start_handler(message: Message) -> None:
                          f"Пример: {hbold('М6О-208Б-22')}")
 
 
-@dp.message()
+@dp.message(F.text)
 async def process_group(message: Message) -> None:
     group = message.text
     all_groups = await get_groups()
@@ -72,8 +72,7 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
         request = today.strftime('%y%W')
 
     return await action(text=await get_timetable_msg(group, request),
-                        reply_markup=get_timetable_markup(group, request),
-                        parse_mode=ParseMode.HTML)
+                        reply_markup=get_timetable_markup(group, request))
 
 
 dp.callback_query(TimetableRequest.filter())(timetable_handler)
