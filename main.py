@@ -1,22 +1,25 @@
-import asyncio
 import logging
 import sys
 from datetime import date
 from difflib import get_close_matches
+from os import getenv
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.markdown import hbold, hunderline
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
 
-from config import TOKEN
 from keyboards import get_confirm_markup, get_timetable_markup, TimetableRequest
 from timetable import get_groups
 from timetable import get_timetable_msg
 
 dp = Dispatcher()
-bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
+
+TOKEN = getenv("BOT_TOKEN")
+WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
 
 
 @dp.message(CommandStart())
@@ -78,10 +81,42 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
 dp.callback_query(TimetableRequest.filter())(timetable_handler)
 
 
-async def main() -> None:
-    await dp.start_polling(bot)
+async def on_startup(bot: Bot) -> None:
+    # In case when you have a self-signed SSL certificate, you need to send the certificate
+    # itself to Telegram servers for validation purposes
+    # (see https://core.telegram.org/bots/self-signed)
+    # But if you have a valid SSL certificate, you SHOULD NOT send it to Telegram servers.
+    await bot.set_webhook(
+        getenv("WEBHOOK_URL"),
+        secret_token=WEBHOOK_SECRET,
+    )
+
+
+async def on_shutdown(bot: Bot) -> None:
+    await bot.delete_webhook()
+
+
+def main() -> None:
+    bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
+
+    app = web.Application()
+    # Create an instance of request handler,
+    # aiogram has few implementations for different cases of usage
+    # In this example we use SimpleRequestHandler which is designed to handle simple cases
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+        secret_token=WEBHOOK_SECRET,
+    )
+    # Register webhook handler on application
+    webhook_requests_handler.register(app, path=getenv("WEBHOOK_PATH"))
+    # Mount dispatcher startup and shutdown hooks to aiohttp application
+    setup_application(app, dp, bot=bot)
+
+    # And finally start webserver
+    web.run_app(app, host=getenv("WEB_SERVER_HOST"), port=int(getenv("WEB_SERVER_PORT")))
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    asyncio.run(main())
+    main()
