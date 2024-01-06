@@ -2,6 +2,8 @@ version: "3.8"
 services:
   bot:
     build: .
+    ports:
+      - "${WEB_SERVER_HOST}:${WEB_SERVER_PORT}:${WEB_SERVER_PORT}"
     env_file:
       - .env
     restart: always
