@@ -116,7 +116,7 @@ def main() -> None:
     setup_application(app, dp, bot=bot)
 
     # And finally start webserver
-    web.run_app(app, host=getenv("WEB_SERVER_HOST"), port=int(getenv("WEB_SERVER_PORT")))
+    web.run_app(app, host="0.0.0.0", port=int(getenv("WEB_SERVER_PORT")))
 
 
 if __name__ == "__main__":
