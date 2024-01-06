@@ -81,6 +81,7 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
 dp.callback_query(TimetableRequest.filter())(timetable_handler)
 
 
+@dp.startup()
 async def on_startup(bot: Bot) -> None:
     # In case when you have a self-signed SSL certificate, you need to send the certificate
     # itself to Telegram servers for validation purposes
@@ -92,6 +93,7 @@ async def on_startup(bot: Bot) -> None:
     )
 
 
+@dp.shutdown()
 async def on_shutdown(bot: Bot) -> None:
     await bot.delete_webhook()
 
