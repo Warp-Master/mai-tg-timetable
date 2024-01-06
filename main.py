@@ -88,7 +88,7 @@ async def on_startup(bot: Bot) -> None:
     # (see https://core.telegram.org/bots/self-signed)
     # But if you have a valid SSL certificate, you SHOULD NOT send it to Telegram servers.
     await bot.set_webhook(
-        f'{getenv("WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
+        f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
         secret_token=WEBHOOK_SECRET,
     )
 
