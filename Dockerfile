@@ -8,6 +8,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY *.py .
-COPY templates/ .
+COPY templates ./templates/
 
 ENTRYPOINT ["python", "main.py"]
