@@ -6,12 +6,13 @@ from os import getenv
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery
-from aiogram.utils.markdown import hbold, hunderline
+from aiogram.filters import CommandStart, Command
+from aiogram.types import Message, CallbackQuery, BotCommand
+from aiogram.utils.markdown import hunderline
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
+from config import template_env
 from keyboards import get_confirm_markup, get_timetable_markup, TimetableRequest
 from timetable import get_groups
 from timetable import get_timetable_msg
@@ -24,12 +25,12 @@ WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    """
-    This handler receives messages with `/start` command
-    """
-    await message.answer(f"Привет, {hbold(message.from_user.full_name)}!\n"
-                         "Напишите свою группу\n"
-                         f"Пример: {hbold('М6О-208Б-22')}")
+    await message.answer(template_env.get_template("start.html").render())
+
+
+@dp.message(Command('help', 'about', 'github', 'contacts'))
+async def command_about_handler(message: Message) -> None:
+    await message.answer(template_env.get_template("help.html").render())
 
 
 @dp.message(F.text)
@@ -52,6 +53,7 @@ async def hide_callback_query(query: CallbackQuery) -> None:
     await query.message.delete()
 
 
+@dp.callback_query(TimetableRequest.filter())
 async def timetable_handler(obj: Message | CallbackQuery, callback_data):
     group, request = callback_data.group, callback_data.body
     today = date.today()
@@ -78,15 +80,12 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
                         reply_markup=get_timetable_markup(group, request))
 
 
-dp.callback_query(TimetableRequest.filter())(timetable_handler)
-
-
 @dp.startup()
 async def on_startup(bot: Bot) -> None:
-    # In case when you have a self-signed SSL certificate, you need to send the certificate
-    # itself to Telegram servers for validation purposes
-    # (see https://core.telegram.org/bots/self-signed)
-    # But if you have a valid SSL certificate, you SHOULD NOT send it to Telegram servers.
+    await bot.set_my_commands([
+        BotCommand(command='start', description='Usage example'),
+        BotCommand(command='help', description='About this project and me'),
+    ])
     await bot.set_webhook(
         f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
         secret_token=WEBHOOK_SECRET,
@@ -103,8 +102,6 @@ def main() -> None:
 
     app = web.Application()
     # Create an instance of request handler,
-    # aiogram has few implementations for different cases of usage
-    # In this example we use SimpleRequestHandler which is designed to handle simple cases
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
