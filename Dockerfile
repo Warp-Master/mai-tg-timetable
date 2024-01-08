@@ -1,6 +1,9 @@
 FROM python:3.11-alpine
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
+
+RUN apk add --no-cache tzdata musl-locales
 
 WORKDIR /app
 
