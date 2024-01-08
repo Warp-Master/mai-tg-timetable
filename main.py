@@ -30,7 +30,7 @@ async def command_start_handler(message: Message) -> None:
 
 @dp.message(Command('help', 'about', 'github', 'contacts'))
 async def command_about_handler(message: Message) -> None:
-    await message.answer(template_env.get_template("help.html").render())
+    await message.answer(template_env.get_template("help.html").render(), disable_web_page_preview=True)
 
 
 @dp.message(F.text)
