@@ -23,14 +23,14 @@ TOKEN = getenv("BOT_TOKEN")
 WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
 
 
-@dp.message(CommandStart())
+@dp.message(Command('start', 'help'))
 async def command_start_handler(message: Message) -> None:
-    await message.answer(template_env.get_template("start.html").render())
+    await message.answer(template_env.get_template('start.html').render())
 
 
-@dp.message(Command('help', 'about', 'github', 'contacts'))
+@dp.message(Command('about', 'github', 'contacts'))
 async def command_about_handler(message: Message) -> None:
-    await message.answer(template_env.get_template("help.html").render(), disable_web_page_preview=True)
+    await message.answer(template_env.get_template('about.html').render(), disable_web_page_preview=True)
 
 
 @dp.message(F.text)
@@ -83,8 +83,8 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
 @dp.startup()
 async def on_startup(bot: Bot) -> None:
     await bot.set_my_commands([
-        BotCommand(command='start', description='Usage example'),
-        BotCommand(command='help', description='About this project and me'),
+        BotCommand(command='help', description='Help message'),
+        BotCommand(command='about', description='Project repo and my contacts'),
     ])
     await bot.set_webhook(
         f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
