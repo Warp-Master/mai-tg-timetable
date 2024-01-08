@@ -2,18 +2,9 @@ import datetime
 import hashlib
 import locale
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-
-from config import SessionFactory
+from config import SessionFactory, template_env
 
 locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
-
-env = Environment(
-    loader=FileSystemLoader("templates"),
-    autoescape=select_autoescape(),
-    # trim_blocks=True,
-    # lstrip_blocks=True
-)
 
 
 async def get_groups():
@@ -69,5 +60,5 @@ async def get_timetable_msg(group, request):
         raise ValueError(f"Malformed request: {request}")
     data = {date: data.get(date, dict()) for date in dates}
 
-    template = env.get_template('timetable.html')
+    template = template_env.get_template('timetable.html')
     return template.render(data=repack_days_data(data))

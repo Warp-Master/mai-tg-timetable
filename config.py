@@ -1,12 +1,12 @@
 from datetime import timedelta
+from functools import partial
 
 from aiohttp_client_cache import CachedSession
 from aiohttp_client_cache.backends import SQLiteBackend
 from dotenv import load_dotenv
-from functools import partial
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 load_dotenv()
-
 
 
 CACHE = SQLiteBackend(
@@ -20,3 +20,11 @@ CACHE = SQLiteBackend(
 HEADERS = {'User-Agent': ''}
 
 SessionFactory = partial(CachedSession, cache=CACHE, headers=HEADERS)
+
+
+template_env = Environment(
+    loader=FileSystemLoader("templates"),
+    autoescape=select_autoescape(),
+    # trim_blocks=True,
+    # lstrip_blocks=True
+)
