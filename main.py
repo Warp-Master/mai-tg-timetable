@@ -6,7 +6,7 @@ from os import getenv
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, BotCommand
 from aiogram.utils.markdown import hunderline
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -113,7 +113,7 @@ def main() -> None:
     setup_application(app, dp, bot=bot)
 
     # And finally start webserver
-    web.run_app(app, host="0.0.0.0", port=int(getenv("WEB_SERVER_PORT")))
+    web.run_app(app, host="0.0.0.0", port=8080)
 
 
 if __name__ == "__main__":
