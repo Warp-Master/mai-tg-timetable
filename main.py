@@ -86,20 +86,20 @@ async def on_startup(bot: Bot) -> None:
         BotCommand(command='help', description='Help message'),
         BotCommand(command='about', description='Project repo and my contacts'),
     ])
-    await bot.set_webhook(
-        f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
-        secret_token=WEBHOOK_SECRET,
-    )
+    if not getenv("USE_LONG_PULLING"):
+        await bot.set_webhook(
+            f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
+            secret_token=WEBHOOK_SECRET,
+        )
 
 
 @dp.shutdown()
 async def on_shutdown(bot: Bot) -> None:
-    await bot.delete_webhook()
+    if not getenv("USE_LONG_PULLING"):
+        await bot.delete_webhook()
 
 
-def main() -> None:
-    bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
-
+def start_webapp(bot: Bot) -> None:
     app = web.Application()
     # Create an instance of request handler,
     webhook_requests_handler = SimpleRequestHandler(
@@ -111,9 +111,21 @@ def main() -> None:
     webhook_requests_handler.register(app, path=getenv("WEBHOOK_PATH"))
     # Mount dispatcher startup and shutdown hooks to aiohttp application
     setup_application(app, dp, bot=bot)
-
     # And finally start webserver
     web.run_app(app, host="0.0.0.0", port=8080)
+
+
+def start_pulling(bot: Bot) -> None:
+    import asyncio
+    asyncio.run(dp.start_polling(bot))
+
+
+def main() -> None:
+    bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
+    if getenv("USE_LONG_PULLING"):
+        start_webapp(bot)
+    else:
+        start_pulling(bot)
 
 
 if __name__ == "__main__":
