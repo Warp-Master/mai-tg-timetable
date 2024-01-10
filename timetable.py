@@ -35,8 +35,8 @@ def repack_days_data(data: dict) -> dict:
         title = f"{recode_str_date(day, src_format='%d.%m.%Y', dst_format='%a')} ~ {day[:5]}"
         pairs = {}
         for start_time, pair in day_data.get('pairs', dict()).items():
-            pair_title, value = next(iter(pair.items()), (None, None))
-            if not value:
+            pair_title, value = next(iter(pair.items()), (None, {}))
+            if not pair_title:
                 continue
             pairs[start_time] = {'title': pair_title,
                                  'time_start': value.get('time_start', '')[:-3],
