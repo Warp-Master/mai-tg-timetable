@@ -30,7 +30,6 @@ def recode_str_date(x: str, *, src_format: str = '%y%W%u', dst_format: str = '%d
 
 
 def repack_days_data(data: dict) -> dict:
-    """This is really shit, thanks for the best API"""
     new_data = dict()
     for day, day_data in data.items():
         title = f"{recode_str_date(day, src_format='%d.%m.%Y', dst_format='%a')} ~ {day[:5]}"
