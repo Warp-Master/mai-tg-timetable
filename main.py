@@ -123,9 +123,9 @@ def start_pulling(bot: Bot) -> None:
 def main() -> None:
     bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
     if getenv("USE_LONG_PULLING"):
-        start_webapp(bot)
-    else:
         start_pulling(bot)
+    else:
+        start_webapp(bot)
 
 
 if __name__ == "__main__":
