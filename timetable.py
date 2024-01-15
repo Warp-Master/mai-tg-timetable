@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import locale
+from datetime import date
 
 from config import SessionFactory, template_env
 
@@ -29,6 +30,16 @@ def recode_str_date(x: str, *, src_format: str = '%y%W%u', dst_format: str = '%d
     )
 
 
+def request_processor(request: str) -> str:
+    today = date.today()
+    if request == 'day':
+        return today.strftime('%y%W%u')
+    elif request == 'week':
+        return today.strftime('%y%W')
+    else:
+        return request
+
+
 def repack_days_data(data: dict) -> dict:
     new_data = dict()
     for day, day_data in data.items():
@@ -51,13 +62,15 @@ def repack_days_data(data: dict) -> dict:
 async def get_timetable_msg(group, request):
     data = await get_group_data(group)
 
+    request = request_processor(request)
+
     if len(request) == 4:
         dates = [recode_str_date(f'{request}{weekday}') for weekday in range(1, 8)]
     elif len(request) == 5:
         dates = [recode_str_date(request)]
     else:
         raise ValueError(f"Malformed request: {request}")
-    data = {date: data.get(date, dict()) for date in dates}
+    data = {d: data.get(d, dict()) for d in dates}
 
     template = template_env.get_template('timetable.html')
     return template.render(data=repack_days_data(data))

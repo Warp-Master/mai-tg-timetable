@@ -1,12 +1,13 @@
 import logging
 import sys
-from datetime import date
 from difflib import get_close_matches
+from functools import partial
 from os import getenv
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
+from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 from aiogram.types import Message, CallbackQuery, BotCommand
 from aiogram.utils.markdown import hunderline
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -16,11 +17,14 @@ from config import template_env
 from keyboards import get_confirm_markup, get_timetable_markup, TimetableRequest
 from timetable import get_groups
 from timetable import get_timetable_msg
+from timetable import request_processor
 
 dp = Dispatcher()
 
 TOKEN = getenv("BOT_TOKEN")
 WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
+
+ALLOWED_UPDATES = ["message", "callback_query", "inline_query"]
 
 
 @dp.message(Command('start', 'help'))
@@ -48,6 +52,24 @@ async def process_group(message: Message) -> None:
         )
 
 
+@dp.inline_query()
+async def inline_process_group(query: InlineQuery) -> None:
+    group = query.query
+    all_groups = await get_groups()
+
+    possible_groups = get_close_matches(group, all_groups, n=10)
+    results = []
+    for gr in possible_groups:
+        content = InputTextMessageContent(message_text=await get_timetable_msg(gr, 'week'))
+        results.append(InlineQueryResultArticle(
+            id=gr,
+            title=gr,
+            input_message_content=content,
+            reply_markup=get_timetable_markup(gr, 'week')
+        ))
+    await query.answer(results=results)
+
+
 @dp.callback_query(F.data == "hide")
 async def hide_callback_query(query: CallbackQuery) -> None:
     await query.message.delete()
@@ -55,26 +77,22 @@ async def hide_callback_query(query: CallbackQuery) -> None:
 
 @dp.callback_query(TimetableRequest.filter())
 async def timetable_handler(obj: Message | CallbackQuery, callback_data):
-    group, request = callback_data.group, callback_data.body
-    today = date.today()
+    group, request = callback_data.group, request_processor(callback_data.body)
 
     if isinstance(obj, CallbackQuery):
-        message = obj.message
-        action = message.edit_text
-
-        if request == 'day' and callback_data.showing == today.strftime('%y%W%u'):
+        if request == callback_data.showing:
             return await obj.answer('Уже на текущем дне')
-        if request == 'week' and callback_data.showing == today.strftime('%y%W'):
+        if request == callback_data.showing:
             return await obj.answer('Уже на текущей неделе')
+
+        if obj.message is None:
+            action = partial(obj.bot.edit_message_text, inline_message_id=obj.inline_message_id)
+        else:
+            action = obj.message.edit_text
     elif isinstance(obj, Message):
         action = obj.answer
     else:
         raise ValueError("First argument must be instance of Message or CallbackQuery")
-
-    if request == 'day':
-        request = today.strftime('%y%W%u')
-    elif request == 'week':
-        request = today.strftime('%y%W')
 
     return await action(text=await get_timetable_msg(group, request),
                         reply_markup=get_timetable_markup(group, request))
@@ -90,6 +108,7 @@ async def on_startup(bot: Bot) -> None:
         await bot.set_webhook(
             f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
             secret_token=WEBHOOK_SECRET,
+            allowed_updates=ALLOWED_UPDATES,
         )
 
 
@@ -117,7 +136,7 @@ def start_webapp(bot: Bot) -> None:
 
 def start_pulling(bot: Bot) -> None:
     import asyncio
-    asyncio.run(dp.start_polling(bot))
+    asyncio.run(dp.start_polling(bot, allowed_updates=ALLOWED_UPDATES))
 
 
 def main() -> None:
