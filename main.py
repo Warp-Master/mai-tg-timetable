@@ -14,7 +14,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 from config import template_env
-from keyboards import get_confirm_markup, get_timetable_markup, TimetableRequest
+from keyboards import get_confirm_markup, get_timetable_markup, get_load_markup, TimetableRequest
 from timetable import get_groups
 from timetable import get_timetable_msg
 from timetable import request_processor
@@ -57,17 +57,17 @@ async def inline_process_group(query: InlineQuery) -> None:
     group = query.query
     all_groups = await get_groups()
 
-    possible_groups = get_close_matches(group, all_groups, n=10)
+    possible_groups = get_close_matches(group, all_groups, n=10, cutoff=0.0)
     results = []
     for gr in possible_groups:
-        content = InputTextMessageContent(message_text=await get_timetable_msg(gr, 'week'))
+        content = InputTextMessageContent(message_text=gr)
         results.append(InlineQueryResultArticle(
             id=gr,
             title=gr,
             input_message_content=content,
-            reply_markup=get_timetable_markup(gr, 'week')
+            reply_markup=get_load_markup(gr)
         ))
-    await query.answer(results=results)
+    await query.answer(results=results, cache_time=3600)
 
 
 @dp.callback_query(F.data == "hide")

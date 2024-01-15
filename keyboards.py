@@ -48,8 +48,16 @@ def get_timetable_markup(group: str, request: str) -> InlineKeyboardMarkup:
     next_page = TimetableRequest(group=group, body=next_page).pack()
 
     return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="\u25C0", callback_data=prev_page),
+        inline_keyboard=[[InlineKeyboardButton(text='\u25C0', callback_data=prev_page),
                           InlineKeyboardButton(text='\U0001F3E0', callback_data=home_callback),
-                          InlineKeyboardButton(text="\u25B6", callback_data=next_page)],
+                          InlineKeyboardButton(text='\u25B6', callback_data=next_page)],
                          [switch_type]]
+    )
+
+
+def get_load_markup(group):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='Загрузить', callback_data=TimetableRequest(group=group, body='week').pack())]
+        ]
     )

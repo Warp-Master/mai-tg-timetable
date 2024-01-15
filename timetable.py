@@ -2,26 +2,33 @@ import datetime
 import hashlib
 import locale
 from datetime import date
+from os import getenv
+
+from aiocache import cached
 
 from config import SessionFactory, template_env
 
 locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 
 
+@cached(ttl=int(getenv('GROUP_LIST_CACHE_TTL')), key='groups')
 async def get_groups():
     async with SessionFactory() as session:
-        response = await session.get('https://public.mai.ru/schedule/data/groups.json')
-        response.raise_for_status()
-    data = await response.json()
+        async with session.get('https://public.mai.ru/schedule/data/groups.json') as response:
+            response.raise_for_status()
+            data = await response.json()
     return {gr["name"] for gr in data if "name" in gr}
 
 
+@cached(ttl=int(getenv('GROUP_DATA_CACHE_TTL')), key_builder=lambda func, group_name: group_name)
 async def get_group_data(group_name):
     group_md5 = hashlib.md5(group_name.encode()).hexdigest()
     async with SessionFactory() as session:
-        response = await session.get(f'https://public.mai.ru/schedule/data/{group_md5}.json')
-        response.raise_for_status()
-    return await response.json()
+        async with session.get(f'https://public.mai.ru/schedule/data/{group_md5}.json') as response:
+            response.raise_for_status()
+            data = await response.json()
+            data.pop('group', None)
+    return data
 
 
 def recode_str_date(x: str, *, src_format: str = '%y%W%u', dst_format: str = '%d.%m.%Y') -> str:

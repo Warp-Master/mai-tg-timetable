@@ -4,3 +4,4 @@ python-dotenv
 Jinja2
 aiohttp-client-cache[sqlite]
 aiohttp
+aiocache
