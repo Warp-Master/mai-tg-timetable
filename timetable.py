@@ -1,7 +1,8 @@
 import datetime
 import hashlib
 import locale
-from datetime import date
+from collections import defaultdict
+from datetime import date, datetime
 from os import getenv
 
 from aiocache import cached
@@ -28,13 +29,7 @@ async def get_group_data(group_name):
             response.raise_for_status()
             data = await response.json()
             data.pop('group', None)
-    return data
-
-
-def recode_str_date(x: str, *, src_format: str = '%y%W%u', dst_format: str = '%d.%m.%Y') -> str:
-    return datetime.date.strftime(
-        datetime.datetime.strptime(x, src_format), dst_format
-    )
+    return repack_days_data(data)
 
 
 def request_processor(request: str) -> str:
@@ -47,10 +42,16 @@ def request_processor(request: str) -> str:
         return request
 
 
+class DateDefaultDict(defaultdict):
+    def __missing__(self, key):
+        ret = self[key] = {'title': f"{date.strftime(key, '%a')} ~ {date.strftime(key, '%d.%m')}"}
+        return ret
+
+
 def repack_days_data(data: dict) -> dict:
-    new_data = dict()
+    new_data = DateDefaultDict()
     for day, day_data in data.items():
-        title = f"{recode_str_date(day, src_format='%d.%m.%Y', dst_format='%a')} ~ {day[:5]}"
+        day = datetime.strptime(day, '%d.%m.%Y').date()
         pairs = {}
         for start_time, pair in day_data.get('pairs', dict()).items():
             pair_title, value = next(iter(pair.items()), (None, {}))
@@ -62,7 +63,7 @@ def repack_days_data(data: dict) -> dict:
                                  'lector': next(iter(value.get('lector', dict()).values()), '').title(),
                                  'type': next(iter(value.get('type', dict()).keys()), ''),
                                  'room': next(iter(value.get('room', dict()).values()), '')}
-        new_data[title] = pairs
+        new_data[day]['pairs'] = pairs
     return new_data
 
 
@@ -70,14 +71,13 @@ async def get_timetable_msg(group, request):
     data = await get_group_data(group)
 
     request = request_processor(request)
-
     if len(request) == 4:
-        dates = [recode_str_date(f'{request}{weekday}') for weekday in range(1, 8)]
+        dates = [datetime.strptime(f'{request}{weekday}', '%y%W%u').date() for weekday in range(1, 8)]
     elif len(request) == 5:
-        dates = [recode_str_date(request)]
+        dates = [datetime.strptime(request, '%y%W%u').date()]
     else:
         raise ValueError(f"Malformed request: {request}")
-    data = {d: data.get(d, dict()) for d in dates}
+    data = [data[d] for d in dates]
 
     template = template_env.get_template('timetable.html')
-    return template.render(data=repack_days_data(data))
+    return template.render(data=data)

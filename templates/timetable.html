@@ -1,6 +1,6 @@
-{% for title, d in data.items() -%}
-<pre><code class="language-{{ title }}">{% if d -%}
-    {% for time, pair in d.items() -%}
+{% for d in data -%}
+<pre><code class="language-{{ d.title }}">{% if d.pairs -%}
+    {% for time, pair in d.pairs.items() -%}
         {{ pair.title }}&#10;{% if pair.lector -%}
         {{ pair.lector }}&#10;{% endif -%}
         {{ pair.time_start -}}-{{ pair.time_end }}   {{ pair.type }}   {{ pair.room -}}
