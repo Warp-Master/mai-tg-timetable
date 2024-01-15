@@ -9,7 +9,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 from aiogram.types import Message, CallbackQuery, BotCommand
-from aiogram.utils.markdown import hunderline
+from aiogram.utils.markdown import hunderline, hbold
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
@@ -60,7 +60,7 @@ async def inline_process_group(query: InlineQuery) -> None:
     possible_groups = get_close_matches(group, all_groups, n=10, cutoff=0.0)
     results = []
     for gr in possible_groups:
-        content = InputTextMessageContent(message_text=gr)
+        content = InputTextMessageContent(message_text=hbold(gr))
         results.append(InlineQueryResultArticle(
             id=gr,
             title=gr,
