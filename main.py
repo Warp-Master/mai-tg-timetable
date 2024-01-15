@@ -37,7 +37,7 @@ async def command_about_handler(message: Message) -> None:
     await message.answer(template_env.get_template('about.html').render(), disable_web_page_preview=True)
 
 
-@dp.message(F.text)
+@dp.message(F.text & ~F.via_bot)
 async def process_group(message: Message) -> None:
     group = message.text
     all_groups = await get_groups()
