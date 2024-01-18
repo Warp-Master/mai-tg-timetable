@@ -20,8 +20,8 @@ from timetable import get_timetable_msg
 from timetable import request_processor
 
 dp = Dispatcher()
+bot = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
 
-TOKEN = getenv("BOT_TOKEN")
 WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
 
 ALLOWED_UPDATES = ["message", "callback_query", "inline_query"]
@@ -29,7 +29,8 @@ ALLOWED_UPDATES = ["message", "callback_query", "inline_query"]
 
 @dp.message(Command('start', 'help'))
 async def command_start_handler(message: Message) -> None:
-    await message.answer(template_env.get_template('start.html').render())
+    me = await bot.me()
+    await message.answer(template_env.get_template('start.html').render(username=me.username))
 
 
 @dp.message(Command('about', 'github', 'contacts'))
@@ -140,7 +141,6 @@ def start_pulling(bot: Bot) -> None:
 
 
 def main() -> None:
-    bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
     if getenv("USE_LONG_PULLING"):
         start_pulling(bot)
     else:
