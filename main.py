@@ -5,10 +5,13 @@ from functools import partial
 from os import getenv
 
 from aiogram import Bot, Dispatcher, F
+from aiogram import flags
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
+from aiogram.types import FSInputFile
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 from aiogram.types import Message, CallbackQuery, BotCommand
+from aiogram.utils.chat_action import ChatActionMiddleware
 from aiogram.utils.markdown import hunderline, hbold
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
@@ -20,22 +23,41 @@ from timetable import get_timetable_msg
 from timetable import request_processor
 
 dp = Dispatcher()
-bot = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
+BOT = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
 
+PLAN_FILE_ID = None
+BIGPLAN_FILE_ID = None
 WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
-
 ALLOWED_UPDATES = ["message", "callback_query", "inline_query"]
 
 
 @dp.message(Command('start', 'help'))
 async def command_start_handler(message: Message) -> None:
-    me = await bot.me()
+    me = await BOT.me()
     await message.answer(template_env.get_template('start.html').render(username=me.username))
 
 
 @dp.message(Command('about', 'github', 'contacts'))
 async def command_about_handler(message: Message) -> None:
     await message.answer(template_env.get_template('about.html').render(), disable_web_page_preview=True)
+
+
+@dp.message(Command('plan'))
+@flags.chat_action("upload_photo")
+async def command_map_handler(message: Message) -> None:
+    global PLAN_FILE_ID
+    file = FSInputFile('images/plan.webp')
+    result = await message.answer_photo(PLAN_FILE_ID or file)
+    PLAN_FILE_ID = result.photo[-1].file_id
+
+
+@dp.message(Command('bigplan'))
+@flags.chat_action("upload_document")
+async def command_map_handler(message: Message) -> None:
+    global BIGPLAN_FILE_ID
+    file = FSInputFile('images/big-plan.png', filename='MAI-plan.png')
+    result = await message.answer_document(BIGPLAN_FILE_ID or file)
+    BIGPLAN_FILE_ID = result.document.file_id
 
 
 @dp.message(F.text & ~F.via_bot)
@@ -99,11 +121,16 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
                         reply_markup=get_timetable_markup(group, request))
 
 
+dp.message.middleware(ChatActionMiddleware())
+
+
 @dp.startup()
 async def on_startup(bot: Bot) -> None:
     await bot.set_my_commands([
-        BotCommand(command='help', description='Help message'),
+        BotCommand(command='help', description='Справка'),
         BotCommand(command='about', description='Project repo and my contacts'),
+        BotCommand(command='plan', description='План-схема кампуса МАИ'),
+        BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)')
     ])
     if not getenv("USE_LONG_PULLING"):
         await bot.set_webhook(
@@ -142,9 +169,9 @@ def start_pulling(bot: Bot) -> None:
 
 def main() -> None:
     if getenv("USE_LONG_PULLING"):
-        start_pulling(bot)
+        start_pulling(BOT)
     else:
-        start_webapp(bot)
+        start_webapp(BOT)
 
 
 if __name__ == "__main__":
