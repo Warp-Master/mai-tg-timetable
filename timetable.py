@@ -80,4 +80,4 @@ async def get_timetable_msg(group, request):
     data = [data[d] for d in dates]
 
     template = template_env.get_template('timetable.html')
-    return template.render(data=data)
+    return template.render(title=group, data=data)

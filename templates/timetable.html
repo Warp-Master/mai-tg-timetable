@@ -1,3 +1,4 @@
+<blockquote><u><b>{{ title }}</b></u></blockquote>
 {% for d in data -%}
 <pre><code class="language-{{ d.title }}">{% if d.pairs -%}
     {% for time, pair in d.pairs.items() -%}
