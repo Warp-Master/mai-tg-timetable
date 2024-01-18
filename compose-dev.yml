@@ -1,7 +1,9 @@
 version: "3.8"
 services:
   bot:
-    build: .
+    extends:
+      file: docker-compose.yml
+      service: bot
     environment:
       - USE_LONG_PULLING=1
     env_file:
