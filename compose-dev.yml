@@ -1,5 +1,12 @@
 version: "3.8"
 services:
+  mongo:
+    extends:
+      file: docker-compose.yml
+      service: mongo
+    ports:
+      - "127.0.0.1:27017:27017"
+
   bot:
     extends:
       file: docker-compose.yml

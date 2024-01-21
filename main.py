@@ -17,6 +17,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 from config import template_env
+from db import init_db
 from keyboards import get_confirm_markup, get_timetable_markup, get_load_markup, TimetableRequest
 from timetable import get_groups
 from timetable import get_timetable_msg
@@ -133,6 +134,7 @@ async def on_startup(bot: Bot) -> None:
         BotCommand(command='plan', description='План-схема кампуса МАИ'),
         BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)')
     ])
+    await init_db()
     if not getenv("USE_LONG_PULLING"):
         await bot.set_webhook(
             f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',

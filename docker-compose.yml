@@ -1,5 +1,16 @@
 version: "3.8"
 services:
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:?}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:?}
+    deploy:
+      resources:
+        limits:
+          memory: ${MONGO_MEM_LIMIT:-1GB}
+
   bot:
     build: .
     volumes:
