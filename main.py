@@ -129,7 +129,7 @@ USED_EVENT_TYPES = dp.resolve_used_update_types()
 async def on_startup(bot: Bot) -> None:
     await bot.set_my_commands([
         BotCommand(command='help', description='Справка'),
-        BotCommand(command='about', description='Project repo and my contacts'),
+        BotCommand(command='about', description='Репозиторий проекта и мои контакты'),
         BotCommand(command='plan', description='План-схема кампуса МАИ'),
         BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)')
     ])
