@@ -7,9 +7,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 load_dotenv()
 
 HEADERS = {'User-Agent': ''}
-
 SessionFactory = partial(ClientSession, headers=HEADERS)
-
 
 template_env = Environment(
     loader=FileSystemLoader("templates"),
