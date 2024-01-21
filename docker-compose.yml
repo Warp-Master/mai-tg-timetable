@@ -15,6 +15,10 @@ services:
     build: .
     volumes:
       - "./images:/app/images:ro"
-    env_file:
-      - .env
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN:?}
+      - GROUP_LIST_CACHE_TTL=${GROUP_LIST_CACHE_TTL:?}
+      - GROUP_DATA_CACHE_TTL=${GROUP_DATA_CACHE_TTL:?}
+      - ACCESS_LOG_TTL=${ACCESS_LOG_TTL:-30}
+      - MONGO_URI=${MONGO_URI:?}
     restart: always
