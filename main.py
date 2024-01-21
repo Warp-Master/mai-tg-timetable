@@ -19,6 +19,7 @@ from aiohttp import web
 from config import template_env
 from db import init_db
 from keyboards import get_confirm_markup, get_timetable_markup, get_load_markup, TimetableRequest
+from middlewares import access_log_middleware
 from timetable import get_groups
 from timetable import get_timetable_msg
 from timetable import request_processor
@@ -124,6 +125,8 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
 dp.message.middleware(ChatActionMiddleware())
 
 USED_EVENT_TYPES = dp.resolve_used_update_types()
+for event_type in USED_EVENT_TYPES:
+    dp.observers[event_type].middleware(access_log_middleware)
 
 
 @dp.startup()
