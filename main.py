@@ -43,7 +43,7 @@ async def command_about_handler(message: Message) -> None:
 
 @dp.message(Command('plan'))
 @flags.chat_action("upload_photo")
-async def command_map_handler(message: Message) -> None:
+async def command_plan_handler(message: Message) -> None:
     global PLAN_FILE_ID
     file = FSInputFile('images/plan.webp')
     result = await message.answer_photo(PLAN_FILE_ID or file)
@@ -52,7 +52,7 @@ async def command_map_handler(message: Message) -> None:
 
 @dp.message(Command('bigplan'))
 @flags.chat_action("upload_document")
-async def command_map_handler(message: Message) -> None:
+async def command_bigplan_handler(message: Message) -> None:
     global BIGPLAN_FILE_ID
     file = FSInputFile('images/big-plan.png', filename='MAI-plan.png')
     result = await message.answer_document(BIGPLAN_FILE_ID or file)
