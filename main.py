@@ -28,7 +28,6 @@ BOT = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
 PLAN_FILE_ID = None
 BIGPLAN_FILE_ID = None
 WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
-ALLOWED_UPDATES = ["message", "callback_query", "inline_query"]
 
 
 @dp.message(Command('start', 'help'))
@@ -123,6 +122,8 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
 
 dp.message.middleware(ChatActionMiddleware())
 
+USED_EVENT_TYPES = dp.resolve_used_update_types()
+
 
 @dp.startup()
 async def on_startup(bot: Bot) -> None:
@@ -136,7 +137,7 @@ async def on_startup(bot: Bot) -> None:
         await bot.set_webhook(
             f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
             secret_token=WEBHOOK_SECRET,
-            allowed_updates=ALLOWED_UPDATES,
+            allowed_updates=USED_EVENT_TYPES,
         )
 
 
@@ -164,7 +165,7 @@ def start_webapp(bot: Bot) -> None:
 
 def start_pulling(bot: Bot) -> None:
     import asyncio
-    asyncio.run(dp.start_polling(bot, allowed_updates=ALLOWED_UPDATES))
+    asyncio.run(dp.start_polling(bot, allowed_updates=USED_EVENT_TYPES))
 
 
 def main() -> None:
