@@ -27,6 +27,7 @@ BOT = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
 
 PLAN_FILE_ID = None
 BIGPLAN_FILE_ID = None
+ABOUT_MESSAGE = template_env.get_template('about.html').render()
 WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
 
 
@@ -38,7 +39,7 @@ async def command_start_handler(message: Message) -> None:
 
 @dp.message(Command('about', 'github', 'contacts'))
 async def command_about_handler(message: Message) -> None:
-    await message.answer(template_env.get_template('about.html').render(), disable_web_page_preview=True)
+    await message.answer(ABOUT_MESSAGE, disable_web_page_preview=True)
 
 
 @dp.message(Command('plan'))
