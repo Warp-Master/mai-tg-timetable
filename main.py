@@ -22,7 +22,7 @@ from timetable import get_groups
 from timetable import get_timetable_msg
 from timetable import request_processor
 
-dp = Dispatcher()
+dp = Dispatcher(disable_fsm=True)
 BOT = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
 
 PLAN_FILE_ID = None
