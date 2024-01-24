@@ -1,5 +1,7 @@
 from functools import partial
+from os import getenv
 
+import redis.asyncio as redis
 from aiohttp import ClientSession
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -15,3 +17,7 @@ template_env = Environment(
     # trim_blocks=True,
     # lstrip_blocks=True
 )
+
+redis_client = redis.from_url(getenv('REDIS_URL'), decode_responses=True)
+redis_ts = redis_client.ts()
+redis_json = redis_client.json()

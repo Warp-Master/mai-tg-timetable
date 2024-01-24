@@ -8,4 +8,9 @@ services:
       - BOT_TOKEN=${BOT_TOKEN:?}
       - GROUP_LIST_CACHE_TTL=${GROUP_LIST_CACHE_TTL:?}
       - GROUP_DATA_CACHE_TTL=${GROUP_DATA_CACHE_TTL:?}
+      - REDIS_URL=redis://redis
+    restart: always
+
+  redis:
+    image: redis/redis-stack-server
     restart: always
