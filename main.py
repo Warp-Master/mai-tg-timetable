@@ -3,6 +3,7 @@ import sys
 from difflib import get_close_matches
 from functools import partial
 from os import getenv
+from time import time
 
 from aiogram import Bot, Dispatcher, F
 from aiogram import flags
@@ -16,9 +17,9 @@ from aiogram.utils.markdown import hunderline, hbold
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
-from config import template_env
+from config import template_env, redis_client
 from keyboards import get_confirm_markup, get_timetable_markup, get_load_markup, TimetableRequest
-from middlewares import access_log_middleware
+from middlewares import statistics_middleware
 from timetable import get_groups
 from timetable import get_timetable_msg
 from timetable import request_processor
@@ -30,6 +31,7 @@ PLAN_FILE_ID = None
 BIGPLAN_FILE_ID = None
 ABOUT_MESSAGE = template_env.get_template('about.html').render()
 WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
+EPOCH_START_TIME = int(time())
 
 
 @dp.message(Command('start', 'help'))
@@ -59,6 +61,16 @@ async def command_bigplan_handler(message: Message) -> None:
     file = FSInputFile('images/big-plan.png', filename='MAI-plan.png')
     result = await message.answer_document(BIGPLAN_FILE_ID or file)
     BIGPLAN_FILE_ID = result.document.file_id
+
+
+@dp.message(Command('stats'))
+async def command_stats_handler(message: Message) -> None:
+    uptime = int(time() - EPOCH_START_TIME)
+    minutes, seconds = divmod(uptime, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    user_cnt = await redis_client.scard('uniq_users')
+    await message.answer(f'Up {days} days, {hours:02d}:{minutes:02d}:{seconds:02d}, {user_cnt} users')
 
 
 @dp.message(F.text & ~F.via_bot)
@@ -126,7 +138,7 @@ dp.message.middleware(ChatActionMiddleware())
 
 USED_EVENT_TYPES = dp.resolve_used_update_types()
 for event_type in USED_EVENT_TYPES:
-    dp.observers[event_type].middleware(access_log_middleware)
+    dp.observers[event_type].middleware(statistics_middleware)
 
 
 @dp.startup()

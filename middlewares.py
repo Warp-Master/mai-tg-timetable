@@ -9,7 +9,7 @@ from config import redis_ts, redis_client
 ACCESS_LOG_TTL = int(getenv("ACCESS_LOG_TTL")) * 24 * 60 * 60 * 1000
 
 
-async def access_log_middleware(
+async def statistics_middleware(
         handler: Callable[[Update, Dict[str, Any]], Awaitable[Any]],
         event: Update,
         data: Dict[str, Any]
