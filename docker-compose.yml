@@ -13,4 +13,6 @@ services:
 
   redis:
     image: redis/redis-stack-server
+    volumes:
+      - ./redis-data:/data
     restart: always

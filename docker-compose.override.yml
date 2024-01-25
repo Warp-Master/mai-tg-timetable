@@ -7,3 +7,6 @@ services:
       - WEBHOOK_PATH=${WEBHOOK_PATH:?}
       - BASE_WEBHOOK_URL=${BASE_WEBHOOK_URL:?}
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:?}
+
+  redis:
+    command: redis-server --save 60 1
