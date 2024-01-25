@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import sys
 from difflib import get_close_matches
@@ -17,15 +18,17 @@ from aiogram.utils.markdown import hunderline, hbold
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
+from api import CachedAPIClient
 from config import template_env, redis_client
 from keyboards import get_confirm_markup, get_timetable_markup, get_load_markup, TimetableRequest
 from middlewares import statistics_middleware
-from timetable import get_groups
 from timetable import get_timetable_msg
 from timetable import request_processor
 
 dp = Dispatcher(disable_fsm=True)
 BOT = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
+API = CachedAPIClient(base_url='https://public.mai.ru/schedule/data/',
+                      default_headers={'User-Agent': ''})
 
 PLAN_FILE_ID = None
 BIGPLAN_FILE_ID = None
@@ -76,7 +79,7 @@ async def command_stats_handler(message: Message) -> None:
 @dp.message(F.text & ~F.via_bot)
 async def process_group(message: Message) -> None:
     group = message.text
-    all_groups = await get_groups()
+    all_groups = await API.get_groups()
 
     if group in all_groups:
         await timetable_handler(message, TimetableRequest(group=group, body='week'))
@@ -91,7 +94,7 @@ async def process_group(message: Message) -> None:
 @dp.inline_query()
 async def inline_process_group(query: InlineQuery) -> None:
     group = query.query
-    all_groups = await get_groups()
+    all_groups = await API.get_groups()
 
     possible_groups = get_close_matches(group, all_groups, n=10, cutoff=0.0)
     results = []
@@ -130,7 +133,7 @@ async def timetable_handler(obj: Message | CallbackQuery, callback_data):
     else:
         raise ValueError("First argument must be instance of Message or CallbackQuery")
 
-    return await action(text=await get_timetable_msg(group, request),
+    return await action(text=await get_timetable_msg(API, group, request),
                         reply_markup=get_timetable_markup(group, request))
 
 
@@ -163,7 +166,7 @@ async def on_shutdown(bot: Bot) -> None:
         await bot.delete_webhook()
 
 
-def start_webapp(bot: Bot) -> None:
+def run_webapp(bot: Bot, loop) -> None:
     app = web.Application()
     # Create an instance of request handler,
     webhook_requests_handler = SimpleRequestHandler(
@@ -176,21 +179,22 @@ def start_webapp(bot: Bot) -> None:
     # Mount dispatcher startup and shutdown hooks to aiohttp application
     setup_application(app, dp, bot=bot)
     # And finally start webserver
-    web.run_app(app, host="0.0.0.0", port=8080)
+    web.run_app(app, host="0.0.0.0", port=8080, loop=loop)
 
 
-def start_pulling(bot: Bot) -> None:
-    import asyncio
-    asyncio.run(dp.start_polling(bot, allowed_updates=USED_EVENT_TYPES))
+async def run_pulling(bot: Bot) -> None:
+    await dp.start_polling(bot, allowed_updates=USED_EVENT_TYPES)
 
 
-def main() -> None:
-    if getenv("USE_LONG_PULLING"):
-        start_pulling(BOT)
-    else:
-        start_webapp(BOT)
+async def main() -> None:
+    loop = asyncio.get_running_loop()
+    async with API:
+        if getenv("USE_LONG_PULLING"):
+            await run_pulling(BOT)
+        else:
+            run_webapp(BOT, loop)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    main()
+    asyncio.run(main())

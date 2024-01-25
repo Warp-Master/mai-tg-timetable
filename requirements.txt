@@ -2,5 +2,4 @@ aiogram
 python-dotenv
 Jinja2
 aiohttp
-aiocache
 redis
