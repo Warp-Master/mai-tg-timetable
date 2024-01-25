@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from timetable import request_processor
-
 
 class TimetableRequest(CallbackData, prefix='tt'):
     group: str
@@ -24,8 +22,6 @@ def get_confirm_markup(group: str) -> InlineKeyboardMarkup:
 
 
 def get_timetable_markup(group: str, request: str) -> InlineKeyboardMarkup:
-    request = request_processor(request)
-
     one_day = timedelta(days=1)
 
     current_day_request = TimetableRequest(group=group, body='day', showing=request).pack()

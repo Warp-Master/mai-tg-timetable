@@ -69,8 +69,6 @@ def repack_days_data(data: dict) -> dict:
 
 async def get_timetable_msg(group, request):
     data = await get_group_data(group)
-
-    request = request_processor(request)
     if len(request) == 4:
         dates = [datetime.strptime(f'{request}{weekday}', '%y%W%u').date() for weekday in range(1, 8)]
     elif len(request) == 5:
