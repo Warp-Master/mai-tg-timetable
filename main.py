@@ -150,7 +150,8 @@ async def on_startup(bot: Bot) -> None:
         BotCommand(command='help', description='Справка'),
         BotCommand(command='about', description='Репозиторий проекта и мои контакты'),
         BotCommand(command='plan', description='План-схема кампуса МАИ'),
-        BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)')
+        BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)'),
+        BotCommand(command='stats', description='Статистика')
     ])
     if not getenv("USE_LONG_PULLING"):
         await bot.set_webhook(
