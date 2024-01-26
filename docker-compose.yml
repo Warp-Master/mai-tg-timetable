@@ -8,11 +8,12 @@ services:
       - BOT_TOKEN=${BOT_TOKEN:?}
       - GROUP_LIST_CACHE_TTL=${GROUP_LIST_CACHE_TTL:?}
       - GROUP_DATA_CACHE_TTL=${GROUP_DATA_CACHE_TTL:?}
-      - REDIS_URL=redis://redis
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?}@redis
     restart: always
 
   redis:
     image: redis/redis-stack-server
+    command: redis-server --save 600 1 --requirepass ${REDIS_PASSWORD:?}
     volumes:
       - ./redis-data:/data
     restart: always
