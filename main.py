@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import sys
 from difflib import get_close_matches
