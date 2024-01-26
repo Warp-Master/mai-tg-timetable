@@ -64,6 +64,11 @@ class CachedAPIClient:
     async def __aexit__(self, *err):
         await self._session.close()
 
+    # Needed for supporting cleanup_ctx in aiohttp application
+    async def __call__(self, *args, **kwargs):
+        async with self:
+            yield
+
     async def fetch_json(self, key: str, filename_builder, cache_ttl: float, processor=None):
         cache_entry = self._cache.get(key)
         headers = self.default_headers

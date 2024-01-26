@@ -167,7 +167,7 @@ async def on_shutdown(bot: Bot) -> None:
         await bot.delete_webhook()
 
 
-def run_webapp(bot: Bot, loop) -> None:
+def run_webapp(bot: Bot) -> None:
     app = web.Application()
     # Create an instance of request handler,
     webhook_requests_handler = SimpleRequestHandler(
@@ -179,23 +179,24 @@ def run_webapp(bot: Bot, loop) -> None:
     webhook_requests_handler.register(app, path=getenv("WEBHOOK_PATH"))
     # Mount dispatcher startup and shutdown hooks to aiohttp application
     setup_application(app, dp, bot=bot)
+    app.cleanup_ctx.append(API)
     # And finally start webserver
-    web.run_app(app, host="0.0.0.0", port=8080, loop=loop)
+    web.run_app(app, host="0.0.0.0", port=8080)
 
 
 async def run_pulling(bot: Bot) -> None:
-    await dp.start_polling(bot, allowed_updates=USED_EVENT_TYPES)
-
-
-async def main() -> None:
-    loop = asyncio.get_running_loop()
     async with API:
-        if getenv("USE_LONG_PULLING"):
-            await run_pulling(BOT)
-        else:
-            run_webapp(BOT, loop)
+        await dp.start_polling(bot, allowed_updates=USED_EVENT_TYPES)
+
+
+def main() -> None:
+    if getenv("USE_LONG_PULLING"):
+        import asyncio
+        asyncio.run(run_pulling(BOT))
+    else:
+        run_webapp(BOT)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    asyncio.run(main())
+    main()
