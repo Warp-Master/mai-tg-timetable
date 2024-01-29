@@ -13,7 +13,8 @@ services:
 
   redis:
     image: redis/redis-stack-server
-    command: redis-server --save 600 1 --requirepass ${REDIS_PASSWORD:?}
+    command: redis-server /opt/redis-stack/etc/redis-stack.conf --requirepass ${REDIS_PASSWORD:?}
     volumes:
-      - ./redis-data:/data
+      - ./redis/redis.conf:/opt/redis-stack/etc/redis-stack.conf
+      - ./redis/data:/data
     restart: always

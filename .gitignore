@@ -1,5 +1,5 @@
 .env
-aiohttp-requests.db
+redis/data/
 
 .idea/
 __pycache__/
