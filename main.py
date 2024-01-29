@@ -16,6 +16,7 @@ from aiogram.utils.chat_action import ChatActionMiddleware
 from aiogram.utils.markdown import hunderline, hbold
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
+from redis.exceptions import ConnectionError
 
 from api import CachedAPIClient
 from config import template_env, redis_client
@@ -71,8 +72,16 @@ async def command_stats_handler(message: Message) -> None:
     minutes, seconds = divmod(uptime, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
-    user_cnt = await redis_client.scard('uniq_users')
-    await message.answer(f'Up {days} days, {hours:02d}:{minutes:02d}:{seconds:02d}, {user_cnt} users')
+    msg_parts = []
+    if days:
+        msg_parts.append(f'{days} days')
+    msg_parts.append(f'{hours:02d}:{minutes:02d}:{seconds:02d}')
+    try:
+        user_cnt = await redis_client.scard('uniq_users')
+        msg_parts.append(f'{user_cnt} users')
+    except ConnectionError:
+        logging.error("Can't connect to redis")
+    await message.answer(f'Up {", ".join(msg_parts)}')
 
 
 @dp.message(F.text & ~F.via_bot)
