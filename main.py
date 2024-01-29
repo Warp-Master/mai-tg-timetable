@@ -9,10 +9,10 @@ from aiogram import Bot, Dispatcher, F
 from aiogram import flags
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, ChatMemberUpdatedFilter, KICKED
+from aiogram.types import ChatMemberUpdated
 from aiogram.types import FSInputFile
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, ChosenInlineResult
 from aiogram.types import Message, CallbackQuery, BotCommand
-from aiogram.types import ChatMemberUpdated
 from aiogram.utils.chat_action import ChatActionMiddleware
 from aiogram.utils.markdown import hunderline, hbold
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
