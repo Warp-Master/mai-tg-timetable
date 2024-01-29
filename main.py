@@ -8,10 +8,11 @@ from time import time
 from aiogram import Bot, Dispatcher, F
 from aiogram import flags
 from aiogram.enums import ParseMode
-from aiogram.filters import Command
+from aiogram.filters import Command, ChatMemberUpdatedFilter, KICKED
 from aiogram.types import FSInputFile
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, ChosenInlineResult
 from aiogram.types import Message, CallbackQuery, BotCommand
+from aiogram.types import ChatMemberUpdated
 from aiogram.utils.chat_action import ChatActionMiddleware
 from aiogram.utils.markdown import hunderline, hbold
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -149,11 +150,20 @@ async def chosen_handler(chosen_result: ChosenInlineResult):
     await timetable_handler(chosen_result, TimetableRequest(group=chosen_result.result_id, body='week'))
 
 
+@dp.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=KICKED))
+async def block_handler(event: ChatMemberUpdated):
+    try:
+        await redis_client.srem('uniq_users', event.from_user.id)
+    except ConnectionError:
+        logging.error('Cant connect to redis')
+
 dp.message.middleware(ChatActionMiddleware())
 
 USED_EVENT_TYPES = dp.resolve_used_update_types()
+EVENT_TYPES_STAT_FREE = ['inline_query', 'my_chat_member']
 for event_type in USED_EVENT_TYPES:
-    dp.observers[event_type].middleware(statistics_middleware)
+    if event_type not in EVENT_TYPES_STAT_FREE:
+        dp.observers[event_type].middleware(statistics_middleware)
 
 
 @dp.startup()
