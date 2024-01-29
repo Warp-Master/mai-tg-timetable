@@ -126,8 +126,8 @@ async def hide_callback_query(query: CallbackQuery) -> None:
 @dp.callback_query(TimetableRequest.filter())
 async def timetable_handler(obj: Message | CallbackQuery | ChosenInlineResult, callback_data):
     group, request, showing = callback_data.group, request_processor(callback_data.body), callback_data.showing
-    if showing and showing.startswith(request):
-        if len(request) == 6:
+    if showing == request:
+        if len(request) == 5:
             return await obj.answer('Уже на текущем дне')
         else:
             return await obj.answer('Уже на текущей неделе')
