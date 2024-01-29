@@ -10,7 +10,7 @@ from aiogram import flags
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import FSInputFile
-from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
+from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, ChosenInlineResult
 from aiogram.types import Message, CallbackQuery, BotCommand
 from aiogram.utils.chat_action import ChatActionMiddleware
 from aiogram.utils.markdown import hunderline, hbold
@@ -123,26 +123,30 @@ async def hide_callback_query(query: CallbackQuery) -> None:
 
 
 @dp.callback_query(TimetableRequest.filter())
-async def timetable_handler(obj: Message | CallbackQuery, callback_data):
-    group, request = callback_data.group, request_processor(callback_data.body)
-
-    if isinstance(obj, CallbackQuery):
-        if request == callback_data.showing:
+async def timetable_handler(obj: Message | CallbackQuery | ChosenInlineResult, callback_data):
+    group, request, showing = callback_data.group, request_processor(callback_data.body), callback_data.showing
+    if showing and showing.startswith(request):
+        if len(request) == 6:
             return await obj.answer('Уже на текущем дне')
-        if request == callback_data.showing:
+        else:
             return await obj.answer('Уже на текущей неделе')
 
-        if obj.message is None:
-            action = partial(obj.bot.edit_message_text, inline_message_id=obj.inline_message_id)
-        else:
-            action = obj.message.edit_text
-    elif isinstance(obj, Message):
+    if isinstance(obj, Message):
         action = obj.answer
+    elif hasattr(obj, 'message') and obj.message is not None:
+        action = obj.message.edit_text
+    elif hasattr(obj, 'inline_message_id') and obj.inline_message_id is not None:
+        action = partial(obj.bot.edit_message_text, inline_message_id=obj.inline_message_id)
     else:
-        raise ValueError("First argument must be instance of Message or CallbackQuery")
+        raise ValueError('Wrong event type')
 
     return await action(text=await get_timetable_msg(API, group, request),
                         reply_markup=get_timetable_markup(group, request))
+
+
+@dp.chosen_inline_result()
+async def chosen_handler(chosen_result: ChosenInlineResult):
+    await timetable_handler(chosen_result, TimetableRequest(group=chosen_result.result_id, body='week'))
 
 
 dp.message.middleware(ChatActionMiddleware())
