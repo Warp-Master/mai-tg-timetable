@@ -23,7 +23,7 @@ async def get_timetable_msg(api, group, request):
     elif len(request) == 5:
         dates = [datetime.strptime(request, '%y%W%u').date()]
     else:
-        raise ValueError(f"Malformed request: {request}")
+        raise ValueError(f'Malformed request: {request}')
     data = [data[d] for d in dates]
 
     template = template_env.get_template('timetable.html')

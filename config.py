@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 load_dotenv()
 
 template_env = Environment(
-    loader=FileSystemLoader("templates"),
+    loader=FileSystemLoader('templates'),
     autoescape=select_autoescape(),
     # trim_blocks=True,
     # lstrip_blocks=True

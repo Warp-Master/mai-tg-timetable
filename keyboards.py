@@ -7,16 +7,16 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 class TimetableRequest(CallbackData, prefix='tt'):
     group: str
     # body may be %y%W (for week display) or %y%W%u (for day display)
-    # also "week" means current week and "day" means current day
+    # also 'week' means current week and 'day' means current day
     body: str
-    showing: str | None = None  # when body equals "week" or "day" stores current page
+    showing: str | None = None  # when body equals 'week' or 'day' stores current page
 
 
 def get_confirm_markup(group: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[[
-            InlineKeyboardButton(text="Нет", callback_data="hide"),
-            InlineKeyboardButton(text="Да", callback_data=TimetableRequest(group=group, body='week').pack())
+            InlineKeyboardButton(text='Нет', callback_data='hide'),
+            InlineKeyboardButton(text='Да', callback_data=TimetableRequest(group=group, body='week').pack())
         ]]
     )
 
@@ -39,7 +39,7 @@ def get_timetable_markup(group: str, request: str) -> InlineKeyboardMarkup:
         home_callback = current_day_request
         switch_type = InlineKeyboardButton(text='По неделям', callback_data=current_week_request)
     else:
-        raise ValueError(f"Malformed request {request}")
+        raise ValueError(f'Malformed request {request}')
     prev_page = TimetableRequest(group=group, body=prev_page).pack()
     next_page = TimetableRequest(group=group, body=next_page).pack()
 

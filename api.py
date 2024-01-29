@@ -96,7 +96,7 @@ class CachedAPIClient:
         return await self.fetch_json(key='groups',
                                      filename_builder=lambda key: f'{key}.json',
                                      cache_ttl=int(getenv('GROUP_LIST_CACHE_TTL')),
-                                     processor=lambda data: {gr["name"] for gr in data if "name" in gr})
+                                     processor=lambda data: {gr['name'] for gr in data if 'name' in gr})
 
     async def get_group_data(self, group_name):
         return await self.fetch_json(key=group_name,

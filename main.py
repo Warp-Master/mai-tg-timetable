@@ -27,14 +27,14 @@ from timetable import get_timetable_msg
 from timetable import request_processor
 
 dp = Dispatcher(disable_fsm=True)
-BOT = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
+BOT = Bot(getenv('BOT_TOKEN'), parse_mode=ParseMode.HTML)
 API = CachedAPIClient(base_url='https://public.mai.ru/schedule/data/',
                       default_headers={'User-Agent': ''})
 
 PLAN_FILE_ID = None
 BIGPLAN_FILE_ID = None
 ABOUT_MESSAGE = template_env.get_template('about.html').render()
-WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
+WEBHOOK_SECRET = getenv('WEBHOOK_SECRET')
 EPOCH_START_TIME = int(time())
 
 
@@ -50,7 +50,7 @@ async def command_about_handler(message: Message) -> None:
 
 
 @dp.message(Command('plan'))
-@flags.chat_action("upload_photo")
+@flags.chat_action('upload_photo')
 async def command_plan_handler(message: Message) -> None:
     global PLAN_FILE_ID
     file = FSInputFile('images/plan.webp')
@@ -59,7 +59,7 @@ async def command_plan_handler(message: Message) -> None:
 
 
 @dp.message(Command('bigplan'))
-@flags.chat_action("upload_document")
+@flags.chat_action('upload_document')
 async def command_bigplan_handler(message: Message) -> None:
     global BIGPLAN_FILE_ID
     file = FSInputFile('images/big-plan.png', filename='MAI-plan.png')
@@ -82,7 +82,7 @@ async def command_stats_handler(message: Message) -> None:
         msg_parts.append(f'{user_cnt} users')
     except ConnectionError:
         logging.error("Can't connect to redis")
-    await message.answer(f'Up {", ".join(msg_parts)}')
+    await message.answer(f"Up {', '.join(msg_parts)}")
 
 
 @dp.message(F.text & ~F.via_bot)
@@ -95,7 +95,7 @@ async def process_group(message: Message) -> None:
     else:
         possible_group = get_close_matches(group, all_groups, n=1, cutoff=0.0)[0]
         await message.answer(
-            f"Может быть {hunderline(possible_group)}?",
+            f'Может быть {hunderline(possible_group)}?',
             reply_markup=get_confirm_markup(possible_group)
         )
 
@@ -118,7 +118,7 @@ async def inline_query_handler(query: InlineQuery) -> None:
     await query.answer(results=results, cache_time=3600)
 
 
-@dp.callback_query(F.data == "hide")
+@dp.callback_query(F.data == 'hide')
 async def hide_callback_query(query: CallbackQuery) -> None:
     await query.message.delete()
 
@@ -175,9 +175,9 @@ async def on_startup(bot: Bot) -> None:
         BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)'),
         BotCommand(command='stats', description='Статистика')
     ])
-    if not getenv("USE_LONG_PULLING"):
+    if not getenv('USE_LONG_PULLING'):
         await bot.set_webhook(
-            f'{getenv("BASE_WEBHOOK_URL")}{getenv("WEBHOOK_PATH")}',
+            f"{getenv('BASE_WEBHOOK_URL')}{getenv('WEBHOOK_PATH')}",
             secret_token=WEBHOOK_SECRET,
             allowed_updates=USED_EVENT_TYPES,
         )
@@ -185,7 +185,7 @@ async def on_startup(bot: Bot) -> None:
 
 @dp.shutdown()
 async def on_shutdown(bot: Bot) -> None:
-    if not getenv("USE_LONG_PULLING"):
+    if not getenv('USE_LONG_PULLING'):
         await bot.delete_webhook()
 
 
@@ -198,12 +198,12 @@ def run_webapp(bot: Bot) -> None:
         secret_token=WEBHOOK_SECRET,
     )
     # Register webhook handler on application
-    webhook_requests_handler.register(app, path=getenv("WEBHOOK_PATH"))
+    webhook_requests_handler.register(app, path=getenv('WEBHOOK_PATH'))
     # Mount dispatcher startup and shutdown hooks to aiohttp application
     setup_application(app, dp, bot=bot)
     app.cleanup_ctx.append(API)
     # And finally start webserver
-    web.run_app(app, host="0.0.0.0", port=8080)
+    web.run_app(app, host='0.0.0.0', port=8080)
 
 
 async def run_pulling(bot: Bot) -> None:
@@ -212,13 +212,13 @@ async def run_pulling(bot: Bot) -> None:
 
 
 def main() -> None:
-    if getenv("USE_LONG_PULLING"):
+    if getenv('USE_LONG_PULLING'):
         import asyncio
         asyncio.run(run_pulling(BOT))
     else:
         run_webapp(BOT)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     main()
