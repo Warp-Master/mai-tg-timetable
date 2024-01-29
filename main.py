@@ -100,7 +100,7 @@ async def process_group(message: Message) -> None:
 
 
 @dp.inline_query()
-async def inline_process_group(query: InlineQuery) -> None:
+async def inline_query_handler(query: InlineQuery) -> None:
     group = query.query
     all_groups = await API.get_groups()
 
