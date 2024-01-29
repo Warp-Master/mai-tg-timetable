@@ -175,7 +175,9 @@ async def on_startup(bot: Bot) -> None:
         BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)'),
         BotCommand(command='stats', description='Статистика')
     ])
-    if not getenv('USE_LONG_PULLING'):
+    if getenv('USE_LONG_PULLING'):
+        await bot.delete_webhook(drop_pending_updates=True)
+    else:
         await bot.set_webhook(
             f"{getenv('BASE_WEBHOOK_URL')}{getenv('WEBHOOK_PATH')}",
             secret_token=WEBHOOK_SECRET,
