@@ -9,6 +9,7 @@ services:
       - GROUP_LIST_CACHE_TTL=${GROUP_LIST_CACHE_TTL:?}
       - GROUP_DATA_CACHE_TTL=${GROUP_DATA_CACHE_TTL:?}
       - REDIS_URL=redis://:${REDIS_PASSWORD:?}@redis
+      - TZ=${TZ:-Europe/Moscow}
     restart: always
 
   redis:
