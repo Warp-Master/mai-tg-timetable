@@ -175,7 +175,7 @@ async def on_startup(bot: Bot) -> None:
         BotCommand(command='bigplan', description='Подробная план-схема кампуса МАИ (файл)'),
         BotCommand(command='stats', description='Статистика')
     ])
-    if getenv('USE_LONG_PULLING'):
+    if getenv('USE_LONG_POLLING'):
         await bot.delete_webhook(drop_pending_updates=True)
     else:
         await bot.set_webhook(
@@ -187,7 +187,7 @@ async def on_startup(bot: Bot) -> None:
 
 @dp.shutdown()
 async def on_shutdown(bot: Bot) -> None:
-    if not getenv('USE_LONG_PULLING'):
+    if not getenv('USE_LONG_POLLING'):
         await bot.delete_webhook()
 
 
@@ -208,15 +208,15 @@ def run_webapp(bot: Bot) -> None:
     web.run_app(app, host='0.0.0.0', port=8080)
 
 
-async def run_pulling(bot: Bot) -> None:
+async def run_polling(bot: Bot) -> None:
     async with API:
         await dp.start_polling(bot, allowed_updates=USED_EVENT_TYPES)
 
 
 def main() -> None:
-    if getenv('USE_LONG_PULLING'):
+    if getenv('USE_LONG_POLLING'):
         import asyncio
-        asyncio.run(run_pulling(BOT))
+        asyncio.run(run_polling(BOT))
     else:
         run_webapp(BOT)
 

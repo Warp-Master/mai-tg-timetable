@@ -5,7 +5,7 @@ services:
       file: docker-compose.yml
       service: bot
     environment:
-      - USE_LONG_PULLING=1
+      - USE_LONG_POLLING=1
 
   redis:
     extends:
