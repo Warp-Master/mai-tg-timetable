@@ -184,7 +184,7 @@ async def timetable_handler(
         raise ValueError("Wrong event type")
 
     return await action(
-        text=await get_timetable_msg(API, group, request),
+        **(await get_timetable_msg(API, group, request)).as_kwargs(),
         reply_markup=get_timetable_markup(group, request),
     )
 
