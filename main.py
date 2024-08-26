@@ -2,10 +2,10 @@ import logging
 import sys
 from difflib import get_close_matches
 from functools import partial
-from os import getenv
 from time import time
 
 from aiogram import Bot, Dispatcher, F, flags
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import KICKED, ChatMemberUpdatedFilter, Command
 from aiogram.types import (
@@ -13,6 +13,7 @@ from aiogram.types import (
     ChatMemberUpdated,
     ChosenInlineResult,
     FSInputFile,
+    InaccessibleMessage,
     InlineQuery,
     InlineQueryResultArticle,
     InputTextMessageContent,
@@ -24,7 +25,18 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 from api import CachedAPIClient
-from config import bot_commands, redis_client, template_env
+from config import (
+    BASE_WEBHOOK_URL,
+    BOT_TOKEN,
+    GROUP_LIST_CACHE_TTL,
+    USE_LONG_POLLING,
+    WEB_SERVER_PORT,
+    WEBHOOK_PATH,
+    WEBHOOK_SECRET,
+    bot_commands,
+    redis_client,
+    template_env,
+)
 from keyboards import (
     TimetableRequest,
     get_confirm_markup,
@@ -36,7 +48,12 @@ from redis.exceptions import ConnectionError
 from timetable import get_timetable_msg, request_processor
 
 dp = Dispatcher(disable_fsm=True)
-BOT = Bot(getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
+BOT = Bot(
+    BOT_TOKEN,
+    default=DefaultBotProperties(
+        parse_mode=ParseMode.HTML,
+    ),
+)
 API = CachedAPIClient(
     base_url="https://public.mai.ru/schedule/data/", default_headers={"User-Agent": ""}
 )
@@ -44,7 +61,6 @@ API = CachedAPIClient(
 PLAN_FILE_ID = None
 BIGPLAN_FILE_ID = None
 ABOUT_MESSAGE = template_env.get_template("about.html").render()
-WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
 EPOCH_START_TIME = int(time())
 
 
@@ -67,7 +83,8 @@ async def command_plan_handler(message: Message) -> None:
     global PLAN_FILE_ID
     file = FSInputFile("images/plan.webp")
     result = await message.answer_photo(PLAN_FILE_ID or file)
-    PLAN_FILE_ID = result.photo[-1].file_id
+    if result.photo is not None:
+        PLAN_FILE_ID = result.photo[-1].file_id
 
 
 @dp.message(Command("bigplan"))
@@ -76,7 +93,8 @@ async def command_bigplan_handler(message: Message) -> None:
     global BIGPLAN_FILE_ID
     file = FSInputFile("images/big-plan.png", filename="MAI-plan.png")
     result = await message.answer_document(BIGPLAN_FILE_ID or file)
-    BIGPLAN_FILE_ID = result.document.file_id
+    if result.document is not None:
+        BIGPLAN_FILE_ID = result.document.file_id
 
 
 @dp.message(Command("stats"))
@@ -94,12 +112,12 @@ async def command_stats_handler(message: Message) -> None:
         msg_parts.append(f"{user_cnt} users")
     except ConnectionError:
         logging.error("Can't connect to redis")
-    await message.answer(f"Up {', '.join(msg_parts)}")
+    await message.answer(f"Up {", ".join(msg_parts)}")
 
 
 @dp.message(F.text & ~F.via_bot)
 async def process_group(message: Message) -> None:
-    group = message.text
+    group: str = message.text or ""
     all_groups = await API.get_groups()
 
     if group in all_groups:
@@ -129,11 +147,13 @@ async def inline_query_handler(query: InlineQuery) -> None:
                 reply_markup=get_load_markup(gr),
             )
         )
-    await query.answer(results=results, cache_time=3600)
+    await query.answer(results=results, cache_time=GROUP_LIST_CACHE_TTL)
 
 
 @dp.callback_query(F.data == "hide")
 async def hide_callback_query(query: CallbackQuery) -> None:
+    if query.message is None or isinstance(query.message, InaccessibleMessage):
+        return
     await query.message.delete()
 
 
@@ -181,7 +201,7 @@ async def block_handler(event: ChatMemberUpdated):
     try:
         await redis_client.srem("uniq_users", event.from_user.id)
     except ConnectionError:
-        logging.error("Cant connect to redis")
+        logging.error("Can't connect to redis")
 
 
 dp.message.middleware(ChatActionMiddleware())
@@ -196,11 +216,11 @@ for event_type in USED_EVENT_TYPES:
 @dp.startup()
 async def on_startup(bot: Bot) -> None:
     await bot.set_my_commands(bot_commands)
-    if getenv("USE_LONG_POLLING"):
+    if USE_LONG_POLLING:
         await bot.delete_webhook(drop_pending_updates=True)
     else:
         await bot.set_webhook(
-            f"{getenv('BASE_WEBHOOK_URL')}{getenv('WEBHOOK_PATH')}",
+            f"{BASE_WEBHOOK_URL}{WEBHOOK_PATH}",
             secret_token=WEBHOOK_SECRET,
             allowed_updates=USED_EVENT_TYPES,
         )
@@ -208,7 +228,7 @@ async def on_startup(bot: Bot) -> None:
 
 @dp.shutdown()
 async def on_shutdown(bot: Bot) -> None:
-    if not getenv("USE_LONG_POLLING"):
+    if not USE_LONG_POLLING:
         await bot.delete_webhook()
 
 
@@ -221,12 +241,12 @@ def run_webapp(bot: Bot) -> None:
         secret_token=WEBHOOK_SECRET,
     )
     # Register webhook handler on application
-    webhook_requests_handler.register(app, path=getenv("WEBHOOK_PATH"))
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
     # Mount dispatcher startup and shutdown hooks to aiohttp application
     setup_application(app, dp, bot=bot)
     app.cleanup_ctx.append(API)
     # And finally start webserver
-    web.run_app(app, host="0.0.0.0", port=8080)
+    web.run_app(app, host="0.0.0.0", port=WEB_SERVER_PORT)
 
 
 async def run_polling(bot: Bot) -> None:
@@ -235,7 +255,7 @@ async def run_polling(bot: Bot) -> None:
 
 
 def main() -> None:
-    if getenv("USE_LONG_POLLING"):
+    if USE_LONG_POLLING:
         import asyncio
 
         asyncio.run(run_polling(BOT))

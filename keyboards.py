@@ -7,9 +7,9 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 class TimetableRequest(CallbackData, prefix="tt"):
     group: str
     # body may be %y%W (for week display) or %y%W%u (for day display)
-    # also 'week' means current week and 'day' means current day
+    # also "week" means current week and "day" means current day
     body: str
-    showing: str | None = None  # when body equals 'week' or 'day' stores current page
+    showing: str | None = None  # when body equals "week" or "day" stores current page
 
 
 def get_confirm_markup(group: str) -> InlineKeyboardMarkup:
@@ -63,9 +63,9 @@ def get_timetable_markup(group: str, request: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="\u25C0", callback_data=prev_page),
-                InlineKeyboardButton(text="\U0001F3E0", callback_data=home_callback),
-                InlineKeyboardButton(text="\u25B6", callback_data=next_page),
+                InlineKeyboardButton(text="\u25c0", callback_data=prev_page),
+                InlineKeyboardButton(text="\U0001f3e0", callback_data=home_callback),
+                InlineKeyboardButton(text="\u25b6", callback_data=next_page),
             ],
             [switch_type],
         ]

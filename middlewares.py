@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Any, Awaitable, Callable, Dict
 
-from aiogram.types import Update
+from aiogram.types import TelegramObject, Update
 
 import redis
 from config import redis_client
@@ -14,12 +14,12 @@ async def add_to_uniq_users(user_id):
     try:
         await redis_client.sadd("uniq_users", user_id)
     except redis.exceptions.ConnectionError:
-        logging.error("Cant connect to redis")
+        logging.error("Can't connect to redis")
 
 
 async def statistics_middleware(
-    handler: Callable[[Update, Dict[str, Any]], Awaitable[Any]],
-    event: Update,
+    handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+    event: TelegramObject,
     data: Dict[str, Any],
 ) -> Any:
     res = await handler(event, data)
