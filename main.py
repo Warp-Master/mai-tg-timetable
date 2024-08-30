@@ -105,11 +105,11 @@ async def command_stats_handler(message: Message) -> None:
     days, hours = divmod(hours, 24)
     msg_parts = []
     if days:
-        msg_parts.append(f"{days} days")
+        msg_parts.append(f"{days} day{"s" * (days > 1)}")
     msg_parts.append(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
     try:
         user_cnt = await redis_client.scard("uniq_users")
-        msg_parts.append(f"{user_cnt} users")
+        msg_parts.append(f"{user_cnt} user{"s" * (user_cnt > 1)}")
     except ConnectionError:
         logging.error("Can't connect to redis")
     await message.answer(f"Up {", ".join(msg_parts)}")
