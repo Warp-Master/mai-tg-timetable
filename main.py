@@ -246,7 +246,7 @@ def run_webapp(bot: Bot) -> None:
     setup_application(app, dp, bot=bot)
     app.cleanup_ctx.append(API)
     # And finally start webserver
-    web.run_app(app, host="0.0.0.0", port=WEB_SERVER_PORT)
+    web.run_app(app, access_log=None, host="0.0.0.0", port=WEB_SERVER_PORT)
 
 
 async def run_polling(bot: Bot) -> None:
