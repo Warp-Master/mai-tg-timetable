@@ -1,7 +1,8 @@
 import locale
 from datetime import date, datetime
+from typing import Any
 
-from config import template_env
+from aiogram.utils.formatting import BlockQuote, Bold, Text
 
 locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
 
@@ -27,7 +28,30 @@ async def get_timetable_msg(api, group, request):
         dates = [datetime.strptime(request, "%y%W%u").date()]
     else:
         raise ValueError(f"Malformed request: {request}")
-    data = [data[d] for d in dates]
 
-    template = template_env.get_template("timetable.html")
-    return template.render(title=group, data=data)
+    # \n needed after each quote for prevent quote join on mac / ios clients
+    # HTML / Markdown parsers can't create such messages
+    parts: Any = [BlockQuote(Bold(group))]
+    for d in dates:
+        day = data[d]
+        day_parts: Any = [Bold(day["title"])]
+        if not day.get("pairs"):
+            parts += ["\n", BlockQuote(*day_parts, "\nВыходной")]
+            continue
+        is_first_pair = True
+        for pair in day.get("pairs", {}).values():
+            day_parts += [
+                "\n" if is_first_pair else "\n\n",
+                f"{pair.get("title", "")}\n",
+                f"{pair["lector"]}\n" if pair.get("lector") else "",
+                f"{pair.get("time_start", "")}-{pair.get("time_end", "")}   {pair.get("type", "")}   {pair.get("room", "")}",
+            ]
+            is_first_pair = False
+        parts += [
+            "\n",
+            BlockQuote(*day_parts),
+        ]
+
+    message = Text(*parts)
+
+    return message

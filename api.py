@@ -3,10 +3,11 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
-from os import getenv
 from typing import Any
 
 from aiohttp import ClientSession, ClientTimeout
+
+from config import GROUP_DATA_CACHE_TTL, GROUP_LIST_CACHE_TTL
 
 
 def repack_group_data(data: dict) -> dict:
@@ -34,7 +35,7 @@ def repack_group_data(data: dict) -> dict:
 class DateDefaultDict(defaultdict):
     def __missing__(self, key):
         ret = self[key] = {
-            "title": f"{date.strftime(key, '%a')} ~ {date.strftime(key, '%d.%m')}"
+            "title": f"{date.strftime(key, "%a")} ~ {date.strftime(key, "%d.%m")}"
         }
         return ret
 
@@ -43,7 +44,7 @@ class DateDefaultDict(defaultdict):
 class CacheEntry:
     data: Any
     last_check: float
-    etag: str
+    etag: str | None
 
     def is_valid(self, ttl) -> bool:
         return time.time() < self.last_check + ttl
@@ -65,16 +66,17 @@ class CachedAPIClient:
         return self
 
     async def __aexit__(self, *err):
-        await self._session.close()
+        if self._session:
+            await self._session.close()
 
     # Needed for supporting cleanup_ctx in aiohttp application
     async def __call__(self, *args, **kwargs):
         async with self:
             yield
 
-    async def fetch_json(
-        self, key: str, filename_builder, cache_ttl: float, processor=None
-    ):
+    async def fetch_json(self, key: str, filename_builder, cache_ttl: float, processor):
+        if self._session is None:
+            raise RuntimeError("session not created")
         cache_entry = self._cache.get(key)
         headers = self.default_headers
         if cache_entry:
@@ -86,7 +88,7 @@ class CachedAPIClient:
         async with self._session.get(
             f"{self.base_url}{filename_builder(key)}", headers=headers
         ) as response:
-            if response.status == 304:
+            if response.status == 304 and cache_entry:
                 cache_entry.last_check = time.time()
                 return cache_entry.data
 
@@ -97,11 +99,11 @@ class CachedAPIClient:
             )
             return res
 
-    async def get_groups(self):
+    async def get_groups(self) -> set[str]:
         return await self.fetch_json(
             key="groups",
             filename_builder=lambda key: f"{key}.json",
-            cache_ttl=int(getenv("GROUP_LIST_CACHE_TTL")),
+            cache_ttl=int(GROUP_LIST_CACHE_TTL),
             processor=lambda data: {gr["name"] for gr in data if "name" in gr},
         )
 
@@ -109,6 +111,6 @@ class CachedAPIClient:
         return await self.fetch_json(
             key=group_name,
             filename_builder=lambda key: f"{hashlib.md5(key.encode()).hexdigest()}.json",
-            cache_ttl=int(getenv("GROUP_DATA_CACHE_TTL")),
+            cache_ttl=int(GROUP_DATA_CACHE_TTL),
             processor=repack_group_data,
         )

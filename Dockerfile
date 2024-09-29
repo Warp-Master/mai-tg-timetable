@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
