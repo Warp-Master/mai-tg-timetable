@@ -3,10 +3,8 @@ services:
     build: .
     volumes:
       - "./images:/app/images:ro"
+    env_file: ".env"
     environment:
-      - BOT_TOKEN=${BOT_TOKEN:?}
-      - GROUP_LIST_CACHE_TTL=${GROUP_LIST_CACHE_TTL:?}
-      - GROUP_DATA_CACHE_TTL=${GROUP_DATA_CACHE_TTL:?}
       - REDIS_URL=redis://:${REDIS_PASSWORD:?}@redis
       - TZ=${TZ:-Europe/Moscow}
     restart: always
