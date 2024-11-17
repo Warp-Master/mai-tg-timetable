@@ -1,4 +1,4 @@
-aiogram
+aiogram==3.*
 python-dotenv
 Jinja2
 aiohttp

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession
 
 from config import GROUP_DATA_CACHE_TTL, GROUP_LIST_CACHE_TTL
 
@@ -51,17 +51,20 @@ class CacheEntry:
 
 
 class CachedAPIClient:
-    __slots__ = ("_session", "_cache", "base_url", "default_headers")
+    __slots__ = ("_session", "_cache", "base_url", "session_kwargs", "ssl")
 
-    def __init__(self, base_url: str, default_headers: dict):
+    def __init__(self, base_url: str, ssl: bool = True, **kwargs):
         self._session = None
         self._cache = dict()
+        self.session_kwargs = kwargs
+
+        # TODO move base_url to ClientSession when aiogram updates aiohttp >= 3.11
         self.base_url = base_url
-        self.default_headers = default_headers
+        self.ssl = ssl
 
     async def __aenter__(self):
         self._session = ClientSession(
-            raise_for_status=True, timeout=ClientTimeout(total=20)
+            **self.session_kwargs,
         )
         return self
 
@@ -78,15 +81,17 @@ class CachedAPIClient:
         if self._session is None:
             raise RuntimeError("session not created")
         cache_entry = self._cache.get(key)
-        headers = self.default_headers
+        headers = {}
         if cache_entry:
             if cache_entry.is_valid(cache_ttl):
                 return cache_entry.data
             if etag := cache_entry.etag:
-                headers |= {"If-None-Match": etag}
+                headers = {"If-None-Match": etag}
 
         async with self._session.get(
-            f"{self.base_url}{filename_builder(key)}", headers=headers
+            f"{self.base_url}{filename_builder(key)}",
+            headers={**self._session.headers, **headers},
+            ssl=self.ssl,
         ) as response:
             if response.status == 304 and cache_entry:
                 cache_entry.last_check = time.time()

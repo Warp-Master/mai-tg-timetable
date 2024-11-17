@@ -8,11 +8,22 @@ import redis.asyncio as redis
 
 load_dotenv()
 
+positive_values = [
+    "true",
+    "t",
+    "yes",
+    "y",
+    "1",
+    "on",
+]
+
 try:
     BOT_TOKEN = environ["BOT_TOKEN"]
 
     GROUP_LIST_CACHE_TTL = int(environ["GROUP_LIST_CACHE_TTL"])
     GROUP_DATA_CACHE_TTL = int(environ["GROUP_DATA_CACHE_TTL"])
+    API_SSL_VERIFY = getenv("API_SSL_VERIFY", "true").lower() in positive_values
+    API_BASE_URL = environ["API_BASE_URL"]
 
     USE_LONG_POLLING = getenv("USE_LONG_POLLING")
     if not USE_LONG_POLLING:

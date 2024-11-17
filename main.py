@@ -22,10 +22,12 @@ from aiogram.types import (
 from aiogram.utils.chat_action import ChatActionMiddleware
 from aiogram.utils.markdown import hbold, hunderline
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
+from aiohttp import ClientTimeout, web
 
 from api import CachedAPIClient
 from config import (
+    API_BASE_URL,
+    API_SSL_VERIFY,
     BASE_WEBHOOK_URL,
     BOT_TOKEN,
     GROUP_LIST_CACHE_TTL,
@@ -55,7 +57,11 @@ BOT = Bot(
     ),
 )
 API = CachedAPIClient(
-    base_url="https://public.mai.ru/schedule/data/", default_headers={"User-Agent": ""}
+    base_url=API_BASE_URL,
+    headers={"User-Agent": ""},
+    raise_for_status=True,
+    timeout=ClientTimeout(20),
+    ssl=API_SSL_VERIFY,
 )
 
 PLAN_FILE_ID = None
